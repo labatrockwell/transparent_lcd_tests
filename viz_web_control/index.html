@@ -1,0 +1,113 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+    <title>Spacebrew Button (Boolean Example)</title>
+	<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta names="apple-mobile-web-app-status-bar-style" content="black-translucent" />    
+	<meta charset="utf-8">
+
+    <link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" charset="utf-8" />
+    <link rel="stylesheet" href="css/style.css" type="text/css" media="screen" charset="utf-8" />
+
+    <script type="text/javascript" src="js/jq.js"></script>
+	<script type="text/javascript" src="js/sb-1.3.0.js"></script>
+    <script type="text/javascript">
+
+		$(window).on("load", setup);
+	      
+		// Spacebrew Object
+		var sb
+			, app_name = "City View Controller"
+			, buttons = {
+				"weather": true
+				, "tweet": false
+				, "loves": false
+				, "map": false
+				, "search": false
+			}
+			, event_type = "mousedown";
+
+		/**
+	     * setup Configure spacebrew connection and adds the mousedown listener.
+	     */
+		function setup (){
+
+			if( /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent) ) {
+				event_type = "touchstart";
+				console.log("moible device found")
+			}
+			// create spacebrew client object
+			sb = new Spacebrew.Client({reconnect:true});
+
+			// set the base description
+			sb.name(app_name);
+			sb.description("This spacebrew client sends and receives boolean messages.");
+
+			// override Spacebrew events - this is how you catch events coming from Spacebrew
+			sb.onOpen = onOpen;
+
+			for (var button in buttons) {
+				var buttonName = "button_" + button,
+					$buttonImg = $("<img class='icon'>");
+
+				$buttonImg.attr("src", "icons/" + button + "_off.png");
+				if (buttons[button] == true) $buttonImg.attr("src", "icons/" + button + "_on.png");
+				$buttonImg.attr("id", "button_" + button);
+				$buttonImg.on(event_type, onButtonToggle);
+				$buttonImg.appendTo("#buttons");
+
+				sb.addPublish( button, "boolean" );
+			}
+
+			// connect to spacbrew
+			sb.connect();
+
+			// setTimeout(function() { window.scrollTo(0,10) }, 500);
+			window.scrollTo(0, 0); 
+		}	
+
+		/**
+		 * Function that is called when Spacebrew connection is established
+		 */
+		function onOpen() {
+			var message = "Connected as <strong>" + sb.name() + "</strong>. ";
+			if (sb.name() === app_name) {
+				message += "<br>You can customize this app's name in the query string by adding <strong>name=your_app_name</strong>."
+			}
+			$("#name").html( message );
+		}
+
+		/**
+	     * Function that is called whenever the button is pressed.  
+	     * @param  {Event object} evt Holds information about the button press event
+	     */
+		function onButtonToggle (evt){
+	        var current = evt.target.id.substring(7);
+			console.log("[onButtonToggle] button has been pressed", current); 
+
+			buttons[current] = true;
+	        $("#" + evt.target.id).attr("src", "icons/" + current + "_on.png");
+
+			// update the browser UI
+			for (var button in buttons) {
+				if (button !== current) {
+					buttons[button] = false;
+			        $("#button_" + button).attr("src", "icons/" + button + "_off.png");
+				} 
+			}
+
+			// send message to Spacebrew
+			sb.send(current, "boolean", true);
+
+		}
+
+	</script>
+	</head>
+
+	<body>
+		<div id="buttons">
+		</div>
+	</body>
+
+</html>
